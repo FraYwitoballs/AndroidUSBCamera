@@ -336,15 +336,12 @@ public final class USBMonitor {
 		try {
 			int flags = PendingIntent.FLAG_UPDATE_CURRENT; // Always update existing intents
 			
-			if (Build.VERSION.SDK_INT >= 34) {
-				// Android 14+ requires IMMUTABLE flag for security
-				XLogWrapper.i(TAG, "register: Android 14+ detected, using FLAG_IMMUTABLE");
-				flags |= PendingIntent.FLAG_IMMUTABLE;
-			} else if (Build.VERSION.SDK_INT >= 31) {
-				// Android 12+ requires explicit package name and MUTABLE flag
-				XLogWrapper.i(TAG, "register: Android 12+ detected, using FLAG_MUTABLE");
-				flags |= PendingIntent.FLAG_MUTABLE;
-			}
+			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+					// Android 12+ (API 31+) requires FLAG_MUTABLE for USB permission broadcasts
+					// This applies to ALL Android 12+ including Android 14 (API 34)
+					XLogWrapper.i(TAG, "register: Android 12+ detected (SDK " + Build.VERSION.SDK_INT + "), using FLAG_MUTABLE");
+					flags |= PendingIntent.FLAG_MUTABLE;
+				}
 			
 			XLogWrapper.i(TAG, "register: creating PendingIntent with flags: " + flags);
 			mPermissionIntent = PendingIntent.getBroadcast(context, 0, intent, flags);
@@ -850,12 +847,10 @@ public final class USBMonitor {
                         // Add flags to prevent creating new activities
                         intent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
                         
-                        int flags = 0;
-                        if (Build.VERSION.SDK_INT >= 31) {
-                            flags = PendingIntent.FLAG_MUTABLE;
+                        int flags = PendingIntent.FLAG_UPDATE_CURRENT;
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                            flags |= PendingIntent.FLAG_MUTABLE;
                         }
-                        // Add FLAG_UPDATE_CURRENT to ensure we update any existing pending intent
-                        flags |= PendingIntent.FLAG_UPDATE_CURRENT;
                         
                         mPermissionIntent = PendingIntent.getBroadcast(context, 0, intent, flags);
                         XLogWrapper.i(TAG, "Emergency permission intent creation succeeded with flags: " + flags);
@@ -1898,3 +1893,4 @@ public final class USBMonitor {
 	}
 
 }
+
