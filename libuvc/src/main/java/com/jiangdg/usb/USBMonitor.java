@@ -796,16 +796,18 @@ public final class USBMonitor {
             prefs.edit().putBoolean("first_run", false).apply();
         }
         
-        // For Android 9+ (API 28+), reset permission first
-        if (Build.VERSION.SDK_INT >= 28) {
-            XLogWrapper.i(TAG, "Android 9+ detected, resetting device permission first");
+        // For Android 9+ (API 28+), only reset permission if we don't already have it.
+        // Unconditional reset causes physical USB disconnect on Quest 2 (Android 12L)
+        // and results in null device in the permission broadcast.
+        if (Build.VERSION.SDK_INT >= 28 && !mUsbManager.hasPermission(device)) {
+            XLogWrapper.i(TAG, "Android 9+ detected, permission not granted, resetting device permission first");
             resetDevicePermission(device);
-            try { 
+            try {
                 XLogWrapper.i(TAG, "Waiting 100ms after permission reset");
-                Thread.sleep(100); 
-            } catch (InterruptedException e) { 
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
                 XLogWrapper.e(TAG, "Sleep interrupted", e);
-                Thread.currentThread().interrupt(); 
+                Thread.currentThread().interrupt();
             }
         }
         
